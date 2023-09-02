@@ -1,5 +1,6 @@
 package com.example.memeshare
 
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -21,15 +22,23 @@ import com.bumptech.glide.request.target.Target
 import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var progressBar: ProgressBar
+    private lateinit var meme: ImageView
+    private var currentImageUrl: String = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val progressBar: ProgressBar = findViewById(R.id.progressBar)
-        progressBar.visibility = View.VISIBLE
-        val meme: ImageView = findViewById(R.id.meme)
-        val url = "https://meme-api.com/gimme" // Replace with the actual URL of your meme image
+        progressBar = findViewById(R.id.progressBar)
+        meme = findViewById(R.id.meme)
+        loadMeme()
+    }
 
+    private fun loadMeme() {
+        progressBar.visibility = View.VISIBLE
+        val url = "https://meme-api.com/gimme" // Replace with the actual URL of your meme image
+        //Glide.with(this).clear(meme)
         // Create a Volley RequestQueue
         val queue = Volley.newRequestQueue(this)
 
@@ -40,9 +49,12 @@ class MainActivity : AppCompatActivity() {
             null,
             { response ->
 
-                val url = response.getString("url")
+                val imageUrl = response.getString("url")
+                currentImageUrl = imageUrl // Store the current image URL
+
                 Glide.with(this)
-                    .load(url).listener(object :RequestListener<Drawable>{
+                    .load(imageUrl)
+                    .listener(object : RequestListener<Drawable> {
                         override fun onLoadFailed(
                             e: GlideException?,
                             model: Any?,
@@ -67,18 +79,27 @@ class MainActivity : AppCompatActivity() {
                     .into(meme)
             },
             { error ->
-                Toast.makeText(this,"Glat hai",Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Failed to load meme", Toast.LENGTH_LONG).show()
             }
         )
 
         // Add the request to the RequestQueue
         queue.add(jsonObjectRequest)
     }
-}
 
     fun shareMeme(view: View) {
-
+        // Implement sharing functionality here using currentImageUrl
+        val intent = Intent(Intent.ACTION_SEND)
+        intent.type= "text/plain"
+        intent.putExtra(Intent.EXTRA_TEXT,"Check this out $currentImageUrl")
+        val chooser = Intent.createChooser(intent,"Share")
+        startActivity(chooser)
     }
+
     fun nextMeme(view: View) {
-
+        // Call the loadMeme function to load the next meme
+        loadMeme()
     }
+}
+
+
